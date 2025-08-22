@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Grow A Garden Stock (Clone)</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#0b0f19;color:#e5e7eb;margin:0;padding:20px}
+    .container{max-width:900px;margin:0 auto}
+    .card{background:#0f172a;border:1px solid #1f2937;border-radius:12px;padding:16px;margin:12px 0}
+    .row{display:flex;justify-content:space-between;gap:12px}
+    .badge{padding:4px 8px;border-radius:8px;font-size:12px}
+    .ok{background:#065f46}
+    .no{background:#7f1d1d}
+    .muted{color:#9ca3af}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Grow A Garden Stock Alerts (Clone)</h1>
+  <div id="status" class="muted">Connecting...</div>
+  <div id="updated" class="muted"></div>
+  <div id="list" class="grid"></div>
+</div>
+<script>
+function render(data){
+  const list = document.getElementById("list");
+  document.getElementById("updated").textContent = "Updated: " + new Date(data.updatedAt).toLocaleTimeString();
+  list.innerHTML = "";
+  data.items.forEach(x=>{
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `<div class="row"><strong>${x.item}</strong><span class="badge ${x.inStock?"ok":"no"}">${x.inStock?"In Stock":"Out"}</span></div><div class="muted">Category: ${x.category}</div><div class="muted">Last seen: ${new Date(x.lastSeen).toLocaleTimeString()}</div>`;
+    list.appendChild(div);
+  });
+}
+async function bootstrap(){
+  try{
+    const resp = await fetch("/api/stock");
+    const j = await resp.json();
+    render(j);
+  }catch(e){}
+  const evt = new EventSource("/api/stock/stream");
+  const statusEl = document.getElementById("status");
+  evt.onopen = ()=> statusEl.textContent = "Live: connected";
+  evt.onerror = ()=> statusEl.textContent = "Live: reconnecting...";
+  evt.addEventListener("stock", (ev)=>{
+    const payload = JSON.parse(ev.data);
+    render(payload);
+  });
+}
+bootstrap();
+</script>
+</body>
+</html>
