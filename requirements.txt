@@ -1,0 +1,6 @@
+feedparser
+requests
+newspaper3k
+python-dotenv
+Pillow
+keybert
