@@ -4,3 +4,5 @@ newspaper3k
 python-dotenv
 Pillow
 keybert
+lxml_html_clean
+
