@@ -25,7 +25,28 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install lxml_html_clean
+          pip install lxml_html_clean # Ensure this is in requirements.txt or installed separately
+
+      # --- START OF CACHE ADDITION ---
+      - name: Restore last published state from cache
+        uses: actions/cache@v3
+        with:
+          path: last_published.txt
+          key: ${{ runner.os }}-last-published
+          # No restore-keys here, as it's the first attempt to retrieve.
+          # If cache miss, file won't exist, which is handled by script's get_last_published.
+
+      - name: Show content of last_published.txt (for debugging)
+        run: |
+          if [ -f last_published.txt ]; then
+            echo "last_published.txt content: $(cat last_published.txt)"
+          else
+            echo "last_published.txt does not exist in cache."
+          fi
+        # Add 'continue-on-error: true' if you want the workflow to proceed even if this step fails (e.g., file not found initially)
+        continue-on-error: true
+
+      # --- END OF CACHE ADDITION ---
 
       - name: Run script with secrets
         env:
@@ -35,3 +56,15 @@ jobs:
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
           DEFAULT_IMAGE_URL: ${{ secrets.DEFAULT_IMAGE_URL }}
         run: python main.py
+
+      # --- START OF CACHE ADDITION ---
+      - name: Save last published state to cache
+        uses: actions/cache@v3
+        with:
+          path: last_published.txt
+          key: ${{ runner.os }}-last-published
+          # We need restore-keys here to ensure the cache is updated correctly
+          # if a previous entry exists but was not hit in the restore step (less common for a single key)
+          restore-keys: |
+            ${{ runner.os }}-last-published
+      # --- END OF CACHE ADDITION ---
